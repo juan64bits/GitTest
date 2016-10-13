@@ -50,9 +50,10 @@ void sortArray(string * array, int len, bool forward=true)
     if(len<2) return;
     //make a copy of array
     string * arrayTemp = new string[len];
-    memcpy (arrayTemp, array, len * sizeof(string) );
+    copy(array, array + len, arrayTemp);
     string tmpValue;
     int tmpPos;
+
     //sort array in ascend mode
     for(int i=0; i<len; i++)
     {
@@ -144,9 +145,10 @@ int main() {
         
         string * wordsArray=new string[inputArray[i].length()+1];
         int words = splitString(inputArray[i], wordsArray, ' ');
-       // cout << words;
+      
         if(words!=-1)
         {   
+ 
             if(words)
             {
                 //Sort the line N 
