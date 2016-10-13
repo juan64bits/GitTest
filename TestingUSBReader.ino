@@ -10,7 +10,7 @@
 
 #define STEERING_KEYS_A A0
 #define STEERING_KEYS_B A1
-#define LINE_PIN A2
+#define LINE_PIN 9
 
 #define PUSH_TIME 100
 #define LONG_PUSH_TIME 1000
@@ -19,6 +19,7 @@
 
 bool playerState; 
 bool fistTimeOn;  
+int playButtonCount=0;
 
 void powerPress()
 {
@@ -85,7 +86,7 @@ void auxPress()
 #endif
         pinMode(BUTTON_AUX, OUTPUT);          
         digitalWrite(BUTTON_AUX, LOW);
-        delay(PUSH_TIME);
+        delay(PUSH_TIME*4);
         pinMode(BUTTON_AUX, INPUT);     
 }
 
@@ -112,6 +113,7 @@ void checkSteeringKeys()
         //Audio player control
         int keyA = analogRead(STEERING_KEYS_A)/2;
         int keyB = analogRead(STEERING_KEYS_B)/2;
+                
 /*
 #ifdef SERIAL_DEBUG
         Serial.print("Reading remote control: KEYA=");
@@ -121,13 +123,33 @@ void checkSteeringKeys()
 #endif 
 */     
         if(keyA>105 & keyA<125)  //SEEK UP for 1.7V +-10%    6(P)
+        {
           nextPress();
-        
-        if(keyB>105 & keyB<125)  //SEEK DOWN for 1.7V +-10%  16(L)
+        }
+        else if(keyB>105 & keyB<125)  //SEEK DOWN for 1.7V +-10%  16(L)
+        {
           backPress();
-      
-        if((keyA>=0 & keyA<20) & (keyB>=0 & keyB<20)) //Both, SEND & END for 0V 
-          playPress();
+        }
+        else if((keyA>=0 & keyA<20) & (keyB>=0 & keyB<20)) //Both, SEND & END for 0V 
+        {
+          playButtonCount++; // Count time while buttons are pushed.
+        }
+        else
+        {
+          if(playButtonCount)  //If the buttons are released and play was pressed
+          {
+            if(playButtonCount<5) //Emulate Play press if is a short press
+            {
+              playPress();
+            }
+            else                //Emulate Mode press if is a long hold press.
+            {
+              modePress();
+            }
+          }
+          playButtonCount=0;
+        }
+   
 }
 
 void powerOnPlayer()
@@ -140,9 +162,6 @@ void powerOnPlayer()
 #endif    
 
     powerPress();    
-    auxPress();
-    delay(200);
-    
     playerState=digitalRead(PLAYER_ON);
 
 #ifdef SERIAL_DEBUG  
@@ -151,18 +170,20 @@ void powerOnPlayer()
 
     if(playerState) 
     {
+        blinkLed(400,10); //Wait to loading procedure
         if(!fistTimeOn)
         {
 #ifdef SERIAL_DEBUG  
             Serial.println("-USB MODE?-");
 #endif            
-            delay(3200);
             modePress(); //Radio mode skip
-            delay(500);
+            blinkLed(500,1); //Wait to loading procedure
             modePress(); //AUX mode skip
         }
         fistTimeOn=false;
         lineInSet(HIGH);
+        blinkLed(200,3); //Wait to radio detection of line-in
+        auxPress(); 
     }  
   }
 }
@@ -216,10 +237,22 @@ void setup() {
     
 }
 
+void blinkLed(int t, int x)
+{
+  for(int i=0; i<x;i++)
+  {
+    digitalWrite(LED,LOW);
+    delay(t/2);
+    digitalWrite(LED,HIGH);
+    delay(t/2);    
+  }
+}
+
 void loop() {
+ 
     playerState=digitalRead(PLAYER_ON);
     digitalWrite(LED,playerState);
-    
+/*    
     
     if(!digitalRead(USB_PIN))   //Ever that USB is connected
     {
@@ -240,7 +273,7 @@ void loop() {
             powerOffPlayer();
         }
     }
-  
+*/
 }
 
 
@@ -290,5 +323,6 @@ void serialEvent() {
   }
 }
 #endif
+
 
 
