@@ -4,12 +4,13 @@
 #define PLAY  10
 #define NEXT  12
 
-#define PLAYER_ON 8
+#define PLAYER_ON    8
+#define ACC_ON       7    
+#define USB_PIN      2
 
-#define USB_PIN 2
-#define BUTTON_AUX 3
-#define LINE_PIN 4
-#define LED 13
+#define BUTTON_AUX   A4
+#define LINE_PIN     A5
+#define LED          13
 
 #define STEERING_KEYS_A A0
 #define STEERING_KEYS_B A1
@@ -22,7 +23,7 @@
 
 bool playerState; 
 bool fistTimeOn;  
-int playButtonCount=0;
+int  playButtonCount=0;
 
 void powerPress()
 {
@@ -229,7 +230,10 @@ void setup() {
     pinMode(USB_PIN, INPUT);      //For USB detection
     digitalWrite(USB_PIN, HIGH);  //Set pullup
     
-    pinMode(PLAYER_ON, INPUT);
+    pinMode(PLAYER_ON, INPUT);   //Player on ?
+    digitalWrite(PLAYER_ON, LOW);  //Set pulldown
+    pinMode(ACC_ON, INPUT);      //Acc Power ?
+    digitalWrite(ACC_ON, LOW);  //Set pulldown
     
     pinMode(BUTTON_AUX, INPUT); //For emulate the AUX button press
     pinMode(LINE_PIN, INPUT);   //For emulate the LINE IN plugged
@@ -259,26 +263,32 @@ void loop() {
     digitalWrite(LED,playerState);
  
     
-    if(!digitalRead(USB_PIN))   //Ever that USB is connected
-    {
-        delay(MAIN_LOOP_TIME);
-        if(!digitalRead(USB_PIN))   //Confirmation
-        {   
-            checkSteeringKeys() ;
-            //If required, power on the player 
-            powerOnPlayer();
+   if(digitalRead(ACC_ON)) 
+   {
+      if(!digitalRead(USB_PIN))  //Ever that USB is connected and power ACC
+      {
+            delay(MAIN_LOOP_TIME);
+            if(!digitalRead(USB_PIN))   //Confirmation
+            {   
+                checkSteeringKeys() ;
+                //If required, power on the player 
+                powerOnPlayer();
+            }
+       }
+       else
+       {
+            //Power off the player  
+            delay(MAIN_LOOP_TIME);
+            if(digitalRead(USB_PIN))   //Confirmation
+            {
+                powerOffPlayer();
+            }
         }
     }
     else
     {
-        //Power off the player  
-        delay(MAIN_LOOP_TIME);
-        if(digitalRead(USB_PIN))   //Confirmation
-        {
-            powerOffPlayer();
-        }
-    }
-
+        powerOffPlayer();
+    }    
 }
 
 
